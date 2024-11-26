@@ -8,8 +8,8 @@ import java.util.Random;
 import javax.swing.*;
 
 public class Minesweeper extends JPanel implements ActionListener {
-  int boardWidth = 400;
-  int boardHeight = 200;
+  int boardWidth = 1200;
+  int boardHeight = 600;
 
   Image backgroundImg;
 
