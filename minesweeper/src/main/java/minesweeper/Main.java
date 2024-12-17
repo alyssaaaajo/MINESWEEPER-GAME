@@ -3,7 +3,7 @@ package minesweeper;
 import javax.swing.*;
 
 public class Main {
-    public static void main(String[] args) {
+    public static void main(String[] args) throws Exception {
         // int boardWidth = 1200;
         // int boardHeight = 600;
 
