@@ -6,6 +6,9 @@ import java.io.*;
 import java.util.ArrayList;
 import java.util.Random;
 import javax.swing.*;
+import javax.sound.sampled.*;
+
+
 
 public class Minesweeper extends JPanel {
     private class MineTile extends JButton {
@@ -51,6 +54,20 @@ public class Minesweeper extends JPanel {
         frame.setVisible(true);
     }
 
+    private void playBombSound() {
+    try {
+        // Specify the sound file (e.g., "bomb_explosion.wav")
+        File soundFile = new File("bomb_sound.wav"); // Make sure the path is correct
+        AudioInputStream audioStream = AudioSystem.getAudioInputStream(soundFile);
+        Clip clip = AudioSystem.getClip();
+        clip.open(audioStream);
+        clip.start(); // Play the sound
+    } catch (UnsupportedAudioFileException | IOException | LineUnavailableException e) {
+        e.printStackTrace(); // Handle any errors
+    }
+}
+
+
     public void setupGame(int choice) {
         switch (choice) {
             case 0:
@@ -72,40 +89,46 @@ public class Minesweeper extends JPanel {
             default:
                 break;
         }
+
         numRows = numCols;
         boardWidth = numCols * tileSize;
         boardHeight = numRows * tileSize;
         board = new MineTile[numRows][numCols];
-        frame.setSize(boardWidth, boardHeight + 50); // Add space for timer
+        frame.setSize(boardWidth, boardHeight + 50);
         frame.setLocationRelativeTo(null);
         frame.setResizable(false);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setLayout(new BorderLayout());
-
-        textLabel.setFont(new Font("Arial", Font.BOLD, 25));
+    
+        // Title area styling
+        textLabel.setFont(new Font("Arial", Font.BOLD, 30));
         textLabel.setHorizontalAlignment(JLabel.CENTER);
         textLabel.setText("Minesweeper: " + mineCount);
         textLabel.setOpaque(true);
-
+        textLabel.setBackground(Color.decode("#8B0000")); // Dark red background
+        textLabel.setForeground(Color.WHITE);             // White text color
+        textLabel.setBorder(BorderFactory.createLineBorder(Color.BLACK, 3)); // Black border
+    
         timerLabel.setFont(new Font("Arial", Font.BOLD, 25));
         timerLabel.setHorizontalAlignment(JLabel.CENTER);
         timerLabel.setText("Time: 0s");
         timerLabel.setOpaque(true);
-
+    
         textPanel.setLayout(new BorderLayout());
         textPanel.add(textLabel, BorderLayout.NORTH);
         textPanel.add(timerLabel, BorderLayout.SOUTH);
         frame.add(textPanel, BorderLayout.NORTH);
-
+    
         boardPanel.setLayout(new GridLayout(numRows, numCols));
         frame.add(boardPanel);
         initializeBoard();
-
+    
         setMines();
         setTreasures();
-
+    
         startTimer();
     }
+    
 
     private void initializeBoard() {
         for (int r = 0; r < numRows; r++) {
@@ -190,16 +213,48 @@ public class Minesweeper extends JPanel {
     }
 
     public void revealMines() {
-        for (MineTile tile : mineList) {
-            tile.setText("💣");
-            tile.setForeground(Color.decode("#00FF7F"));  // Bomb color (Orange-Red)
-        }
+        Timer bombAnimationTimer = new Timer(100, new ActionListener() {
+            int step = 0; // Step of the animation
+           
+    
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                for (MineTile tile : mineList) {
+                    if (step == 0) {
+                        tile.setBackground(Color.RED); // First frame: Red background
+                        tile.setText("💣");
+                    } else if (step == 1) {
+                        tile.setBackground(Color.ORANGE); // Second frame: Orange background
+                    } else if (step == 2) {
+                        tile.setBackground(Color.YELLOW); // Third frame: Yellow background
+                    } else if (step == 3) {
+                        tile.setBackground(Color.BLACK); // Final frame: Black background
+                    }
+                }
+    
+                step++;
+    
+                // Stop the animation after 4 steps
+                if (step > 3) {
+                    ((Timer) e.getSource()).stop();
+                    showEndScreen(); // Show game-over message after animation ends
+                }
+            }
+        });
+    
+        bombAnimationTimer.start();
+    }
+
+    public void showEndScreen() {
         for (MineTile treasure : treasureList) {
             treasure.setText("💎");
-            treasure.setForeground(Color.decode("#FFD700"));
+            treasure.setForeground(Color.decode("#FFD700")); // Gold for treasures
         }
+        playBombSound();
         gameOver("Game Over! You hit a bomb.", false);
+        
     }
+    
 
     public void revealTreasure(MineTile tile) {
         tile.setText("💎");
@@ -251,6 +306,7 @@ public class Minesweeper extends JPanel {
 
         if (minesFound > 0) {
             tile.setText(Integer.toString(minesFound));
+            tile.setForeground(Color.WHITE);
         } else {
             tile.setText("");
 
@@ -266,6 +322,8 @@ public class Minesweeper extends JPanel {
 
         tile.setBackground(Color.decode("#1C0039")); // Set revealed tile color
 
+       
+
         if (tilesClicked == numRows * numCols - mineList.size()) {
             gameOver("Congratulations! You cleared all mines!", true);
         }
@@ -280,6 +338,7 @@ public class Minesweeper extends JPanel {
         }
         return 0;
     }
+
 
     private void startTimer() {
         timer = new Timer(1000, new ActionListener() {
@@ -323,5 +382,4 @@ public class Minesweeper extends JPanel {
                 return "unknown";
         }
     }
-}
 }
